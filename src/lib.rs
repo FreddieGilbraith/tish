@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 mod issue {
     use uuid::Uuid;
 
@@ -50,20 +52,40 @@ mod issue {
     }
 }
 
-mod project {
+pub mod project {
+    use serde::{Deserialize};
+    use std::error::Error;
+    use std::path::{Path,PathBuf};
     use super::issue;
+use async_std::fs;
+    use normpath::PathExt;
 
-    struct Config {
+    #[derive(Deserialize, Debug)]
+    pub struct Config {
+        issues_path: PathBuf,
         project: ProjectConfig,
         statuses: Vec<StatusConfig>,
     }
 
-    struct StatusConfig {
+    impl Config {
+        pub async fn reify_paths(&mut self, root_dir: &Path) -> Result<(), Box<dyn Error>> {
+            self.issues_path = root_dir.join(&self.issues_path);
+            fs::create_dir_all(&self.issues_path).await?;
+            self.issues_path = self.issues_path.canonicalize()?;
+
+
+            Ok(())
+        }
+    }
+
+    #[derive(Deserialize, Debug)]
+    pub struct StatusConfig {
         name: String,
         resolved: bool,
     }
 
-    struct ProjectConfig {
+    #[derive(Deserialize, Debug)]
+    pub struct ProjectConfig {
         name: String,
         key: String,
     }
