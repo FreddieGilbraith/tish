@@ -7,8 +7,19 @@ fn recursive_get_repo(maybe_dir: Option<&Path>) -> Repository {
 
     match Repository::open(dir) {
         Ok(repo) => repo,
-        Err(e) => recursive_get_repo(dir.parent()),
+        Err(_) => recursive_get_repo(dir.parent()),
     }
+}
+
+fn generate_possible_config_paths(root_dir: &Path) -> Vec<PathBuf> {
+    vec![
+        root_dir.join("tish.toml"),
+        root_dir.join(".tish.toml"),
+        root_dir.join("config").join("tish.toml"),
+        root_dir.join(".config").join("tish.toml"),
+        root_dir.join("tish").join("config.toml"),
+        root_dir.join(".tish").join("config.toml"),
+    ]
 }
 
 fn main() {
@@ -18,11 +29,9 @@ fn main() {
         .workdir()
         .expect("could not open repo working directory");
 
-    let config_file_path = root_dir.join("tish.toml");
+    let config_file_paths = generate_possible_config_paths(&root_dir);
 
-    dbg!(&config_file_path);
+    dbg!(&config_file_paths);
 
     let tish_command = command::cli_parse();
-
-    dbg!(tish_command);
 }
