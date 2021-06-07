@@ -1,0 +1,14 @@
+[package]
+name = "tish"
+version = "0.1.0"
+authors = ["freddie"]
+edition = "2018"
+
+[dependencies]
+clap = "3.0.0-beta.2"
+toml = "0.5.8"
+uuid = "0.8.2"
+
+[dependencies.serde]
+version = "1.0.126"
+features = [ "derive" ]
