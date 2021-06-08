@@ -7,9 +7,12 @@ edition = "2018"
 [dependencies]
 clap = "3.0.0-beta.2"
 toml = "0.5.8"
-uuid = "0.8.2"
 git2 = "0.13.20"
 normpath = "0.3.0"
+
+[dependencies.uuid]
+version = "0.8.2"
+features = ["serde", "v4"]
 
 [dependencies.serde]
 version = "1.0.126"

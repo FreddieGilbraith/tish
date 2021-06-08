@@ -51,18 +51,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let repo = recursive_get_repo(Some(&std::env::current_dir().unwrap()));
 
+    let my_name = repo.config()?.get_string("user.name")?;
+    let my_email = repo.config()?.get_string("user.email")?;
+
     let root_dir = repo
         .workdir()
         .expect("could not open repo working directory");
 
     let config: tish::project::Config = try_to_open_config(&root_dir).await?;
 
-    let project = tish::project::Project::new(config);
+    let project = tish::project::Project::new(config, repo);
     let effects = project.generate_effects(&tish_command).await?;
 
-    if (tish_command.dry_run) {
+    if tish_command.dry_run {
+        println!("--dry-run used, displaying planned effect of command:");
+
         for effect in effects {
-            println!("{}", effect);
+            let effect_report = effect.create_stringified_report().await?;
+            println!("{}", effect_report);
         }
     } else {
         project.apply_effects(&effects).await?;

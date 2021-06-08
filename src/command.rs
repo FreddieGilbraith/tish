@@ -13,7 +13,7 @@ pub struct Root {
     pub dry_run: bool,
 
     #[clap(subcommand)]
-    command: Command,
+    pub command: Command,
 }
 
 #[derive(Clap, Debug)]
@@ -28,10 +28,10 @@ pub enum Command {
 #[derive(Clap, Debug)]
 pub struct CreateOpts {
     #[clap(long, short, about = "The title of the new ticket")]
-    title: String,
+    pub title: String,
 
     #[clap(long, short, about = "The type of the new ticket")]
-    issue_type: issue::IssueType,
+    pub issue_type: issue::IssueType,
 }
 
 #[derive(Clap, Debug)]
@@ -41,13 +41,13 @@ pub struct CheckOpts {
         short,
         about = "Perform a deep clean, checking all tickets for inconsistencies"
     )]
-    deep: bool,
+    pub deep: bool,
 }
 
 #[derive(Clap, Debug)]
 pub struct ExtractOpts {
     #[clap(subcommand)]
-    extract_what: ExtractWhat,
+    pub extract_what: ExtractWhat,
 }
 
 #[derive(Clap, Debug)]

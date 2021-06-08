@@ -3,10 +3,12 @@ use super::effect;
 use super::issue;
 
 use async_std::fs;
+use git2::Repository;
 use normpath::PathExt;
 use serde::Deserialize;
 use std::error::Error;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -34,18 +36,42 @@ pub struct ProjectConfig {
 
 pub struct Project {
     config: Config,
+    repo: Repository,
 }
 
 impl Project {
-    pub fn new(config: Config) -> Self {
-        Self { config }
+    pub fn new(config: Config, repo: Repository) -> Self {
+        Self { config, repo }
     }
 
     pub async fn generate_effects<'a>(
         &'a self,
-        commands: &command::Root,
+        command: &command::Root,
     ) -> Result<Vec<effect::Effect<'a>>, Box<dyn Error>> {
-        Ok(vec![])
+        match &command.command {
+            command::Command::Create(create_opts) => {
+                self.generate_effects_create(create_opts).await
+            }
+            _ => Err("not yet implemented".into()),
+        }
+    }
+
+    pub async fn generate_effects_create<'a>(
+        &'a self,
+        create_opts: &command::CreateOpts,
+    ) -> Result<Vec<effect::Effect<'a>>, Box<dyn Error>> {
+        let task_id = Uuid::new_v4();
+
+        let message = format!(
+            "Created new {:?} \"{}\" [{}]",
+            create_opts.issue_type, create_opts.title, &task_id
+        );
+
+        Ok(vec![effect::Effect {
+            task_id,
+            project: &self,
+            kind: effect::EffectKind::MakeCommit { message },
+        }])
     }
 
     pub async fn apply_effects<'a>(
