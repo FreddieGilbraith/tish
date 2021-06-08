@@ -1,6 +1,6 @@
 use super::command;
 use super::effect;
-use super::issue;
+use super::ticket;
 
 use async_std::fs;
 use git2::Repository;
@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    issues_path: PathBuf,
+    tickets_path: PathBuf,
 
     project: ProjectConfig,
 
@@ -21,9 +21,9 @@ pub struct Config {
 
 impl Config {
     pub async fn reify_paths(&mut self, root_dir: &Path) -> Result<(), Box<dyn Error>> {
-        self.issues_path = root_dir.join(&self.issues_path);
-        fs::create_dir_all(&self.issues_path).await?;
-        self.issues_path = self.issues_path.canonicalize()?;
+        self.tickets_path = root_dir.join(&self.tickets_path);
+        fs::create_dir_all(&self.tickets_path).await?;
+        self.tickets_path = self.tickets_path.canonicalize()?;
 
         Ok(())
     }
@@ -63,15 +63,37 @@ impl Project {
         let task_id = Uuid::new_v4();
 
         let message = format!(
-            "Created new {:?} \"{}\" [{}]",
-            create_opts.issue_type, create_opts.title, &task_id
+            "[tish | {}] Created new {} \"{}\"",
+            &task_id, create_opts.ticket_type, create_opts.title
         );
 
-        Ok(vec![effect::Effect {
+        let name = self.repo.config()?.get_string("user.name")?;
+        let email = self.repo.config()?.get_string("user.email")?;
+        let reporter = ticket::Person { name, email };
+
+        let mut effect_chain = vec![effect::Effect {
+            task_id,
+            project: &self,
+            kind: effect::EffectKind::CreateTicket {
+                reporter,
+                title: create_opts.title.clone(),
+                ticket_type: create_opts.ticket_type.clone(),
+            },
+        }];
+
+        effect_chain.push(effect::Effect {
+            task_id,
+            project: &self,
+            kind: effect::EffectKind::StageTicket,
+        });
+
+        effect_chain.push(effect::Effect {
             task_id,
             project: &self,
             kind: effect::EffectKind::MakeCommit { message },
-        }])
+        });
+
+        Ok(effect_chain)
     }
 
     pub async fn apply_effects<'a>(

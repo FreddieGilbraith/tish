@@ -1,4 +1,4 @@
-use super::issue;
+use super::ticket;
 use clap::{AppSettings, Clap};
 use std::str::FromStr;
 
@@ -27,11 +27,11 @@ pub enum Command {
 
 #[derive(Clap, Debug)]
 pub struct CreateOpts {
-    #[clap(long, short, about = "The title of the new ticket")]
+    #[clap(long, about = "The title of the new ticket")]
     pub title: String,
 
-    #[clap(long, short, about = "The type of the new ticket")]
-    pub issue_type: issue::IssueType,
+    #[clap(long, about = "The type of the new ticket")]
+    pub ticket_type: ticket::TicketType,
 }
 
 #[derive(Clap, Debug)]
