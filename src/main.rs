@@ -47,6 +47,8 @@ async fn try_to_open_config(root_dir: &Path) -> Result<tish::project::Config, Bo
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let tish_command = tish::command::cli_parse();
+
     let repo = recursive_get_repo(Some(&std::env::current_dir().unwrap()));
 
     let root_dir = repo
@@ -55,9 +57,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let config: tish::project::Config = try_to_open_config(&root_dir).await?;
 
-    dbg!(&config);
+    let project = tish::project::Project::new(config);
+    let effects = project.generate_effects(&tish_command).await?;
 
-    let tish_command = tish::command::cli_parse();
+    if (tish_command.dry_run) {
+        for effect in effects {
+            println!("{}", effect);
+        }
+    } else {
+        project.apply_effects(&effects).await?;
+    }
 
     Ok(())
 }

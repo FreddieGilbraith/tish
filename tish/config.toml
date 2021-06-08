@@ -2,20 +2,3 @@ issues_path="./tish/issues"
 
 [project]
 name = "Tish"
-key = "TSH"
-
-[[statuses]]
-name="Backlog"
-resolved=false
-
-[[statuses]]
-name="Todo"
-resolved=false
-
-[[statuses]]
-name="In Progress"
-resolved=false
-
-[[statuses]]
-name="Done"
-resolved=true
