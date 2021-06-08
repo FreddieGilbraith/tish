@@ -1,18 +1,25 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 mod issue {
     use uuid::Uuid;
 
     pub struct RootIssue {
         id: Uuid,
-        status: Status,
-        reporter: Author,
-        issue_type: IssueType,
-
-        links: IssueLinks,
-
         title: String,
         description: String,
+        issue_type: IssueType,
+        status: Status,
+
+        test_cmd: Option<String>,
+        feature: Option<String>,
+
+        priority: Option<u64>,
+
+        reporter: Person,
+        assignee: Option<Person>,
+
+        time: Option<IssueTime>,
+        links: Option<IssueLinks>,
 
         comments: Vec<IssueComment>,
     }
@@ -27,6 +34,7 @@ mod issue {
 
     pub struct IssueLink {
         id: Uuid,
+        issue_type: IssueType,
         title: String,
     }
 
@@ -37,34 +45,42 @@ mod issue {
         Bug,
     }
 
+    pub struct IssueTime {
+        estimate: u64,
+        spent: u64,
+    }
+
     pub struct Status {
         name: String,
     }
 
     pub struct IssueComment {
         text: String,
-        author: Author,
+        author: Person,
     }
 
-    pub struct Author {
+    pub struct Person {
         name: String,
         email: String,
     }
 }
 
 pub mod project {
-    use serde::{Deserialize};
-    use std::error::Error;
-    use std::path::{Path,PathBuf};
     use super::issue;
-use async_std::fs;
+    use async_std::fs;
     use normpath::PathExt;
+    use serde::Deserialize;
+    use std::error::Error;
+    use std::path::{Path, PathBuf};
 
     #[derive(Deserialize, Debug)]
     pub struct Config {
         issues_path: PathBuf,
+
         project: ProjectConfig,
         statuses: Vec<StatusConfig>,
+
+        features_path: Option<PathBuf>,
     }
 
     impl Config {
@@ -72,7 +88,6 @@ use async_std::fs;
             self.issues_path = root_dir.join(&self.issues_path);
             fs::create_dir_all(&self.issues_path).await?;
             self.issues_path = self.issues_path.canonicalize()?;
-
 
             Ok(())
         }
@@ -118,7 +133,10 @@ pub mod command {
     #[derive(Clap, Debug)]
     pub enum Command {
         Create(CreateOpts),
-        Clean(CleanOpts),
+        Check(CheckOpts),
+        Fix(CheckOpts),
+        Extract(ExtractOpts),
+        Test,
     }
 
     #[derive(Clap, Debug)]
@@ -128,13 +146,25 @@ pub mod command {
     }
 
     #[derive(Clap, Debug)]
-    pub struct CleanOpts {
+    pub struct CheckOpts {
         #[clap(
             long,
             short,
             about = "Perform a deep clean, checking all tickets for inconsistencies"
         )]
         deep: bool,
+    }
+
+    #[derive(Clap, Debug)]
+    pub struct ExtractOpts {
+        #[clap(subcommand)]
+        extract_what: ExtractWhat,
+    }
+
+    #[derive(Clap, Debug)]
+    pub enum ExtractWhat {
+        Tests,
+        Features,
     }
 
     pub fn cli_parse() -> Root {
